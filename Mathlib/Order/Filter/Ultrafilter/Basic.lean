@@ -39,6 +39,9 @@ theorem finite_biUnion_mem_iff {is : Set β} {s : β → Set α} (his : is.Finit
     (⋃ i ∈ is, s i) ∈ f ↔ ∃ i ∈ is, s i ∈ f := by
   simp only [← sUnion_image, finite_sUnion_mem_iff (his.image s), exists_mem_image]
 
+theorem finite_iUnion_mem_iff {s : β → Set α} [Finite β] : ⋃ i, s i ∈ f ↔ ∃ i, s i ∈ f := by
+  convert f.finite_biUnion_mem_iff (s := s) finite_univ <;> simp
+
 lemma eventually_exists_mem_iff {is : Set β} {P : β → α → Prop} (his : is.Finite) :
     (∀ᶠ i in f, ∃ a ∈ is, P a i) ↔ ∃ a ∈ is, ∀ᶠ i in f, P a i := by
   simp only [Filter.Eventually, Ultrafilter.mem_coe]
