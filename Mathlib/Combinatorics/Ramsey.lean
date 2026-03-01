@@ -93,6 +93,25 @@ noncomputable instance {t : Finset α} : CoeOut (t⟦^n⟧) (α⟦^n⟧) where
 lemma val_nonempty (s : α⟦^n + 1⟧) : s.val.Nonempty := by
   simp [← card_ne_zero, s.card_eq]
 
+variable [LinearOrder α]
+
+/--
+When `α` is a linear order, there is an equivalence between order embeddings `Fin n ↪o α` and
+subsets of `α` of size `n`.
+-/
+noncomputable def orderEmbNSetEquiv : Fin n ↪o α ≃ α⟦^n⟧ where
+  toFun t := image ⟨univ, card_fin n⟩ t t.injective.injOn
+  invFun s := s.val.orderEmbOfFin s.card_eq
+  left_inv t := by
+    symm
+    apply orderEmbOfFin_unique'
+    simp
+  right_inv s := by
+    ext a
+    simp only [NSet.coe_image]
+    nth_rw 2 [← image_orderEmbOfFin_univ s.val s.card_eq]
+    grind
+
 end NSet
 
 namespace Ramsey
@@ -228,6 +247,30 @@ theorem exists_infinite_monochromatic_subset (n : ℕ) (c : α⟦^n⟧ → ι) :
       grind
     intros
     grind
+
+variable {α : Type*} [Infinite α] [LinearOrder α]
+variable {γ : Type*} [Finite γ] [LinearOrder γ]
+
+/--
+A version of the infinite Ramsey theorem for linear orders.
+-/
+theorem exists_infinite_monochromatic_subset_of_linearOrder (c : (γ ↪o α) → ι)
+    : ∃ x : Set α, x.Infinite ∧ ∀ s₁ s₂ : γ ↪o α, range s₁ ⊆ x → range s₂ ⊆ x → c s₁ = c s₂ := by
+  have := Fintype.ofFinite γ
+  let n := Fintype.card γ
+  let u : Fin n ≃o γ := Fintype.orderIsoFinOfCardEq γ rfl
+  -- From `c`, obtain a coloring `c'` of the `n`-sets.
+  let c' : α⟦^n⟧ → ι := c ∘ u.symm.toOrderEmbedding.trans ∘ orderEmbNSetEquiv.symm
+  obtain ⟨x, x_inf, hx⟩ := exists_infinite_monochromatic_subset n c'
+  use x, x_inf
+  intro s₁ s₂ hs₁ hs₂
+  let t₁ := orderEmbNSetEquiv (u.toOrderEmbedding.trans s₁)
+  let t₂ := orderEmbNSetEquiv (u.toOrderEmbedding.trans s₂)
+  specialize hx t₁ t₂
+    (by simp [t₁, orderEmbNSetEquiv]; grind)
+    (by simp [t₂, orderEmbNSetEquiv]; grind)
+  simp only [Function.comp_apply, c', t₁, t₂] at hx
+  convert hx <;> ext <;> simp
 
 end Ramsey
 
